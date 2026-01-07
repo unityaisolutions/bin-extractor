@@ -1,0 +1,3 @@
+modal
+fastapi[standard]
+python-multipart

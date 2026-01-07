@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BINARY EXTRACTOR v2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        * {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        body {
+            background: #0a0e27;
+            color: #00ff41;
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                transparent 50%,
+                rgba(0, 255, 65, 0.03) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            animation: scanline 10s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+        
+        .terminal-glow {
+            text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+        }
+        
+        .terminal-box {
+            background: rgba(10, 20, 40, 0.9);
+            border: 2px solid #00ff41;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3),
+                        inset 0 0 20px rgba(0, 255, 65, 0.05);
+        }
+        
+        .btn-terminal {
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .btn-terminal:hover:not(:disabled) {
+            background: #00ff41;
+            color: #0a0e27;
+            box-shadow: 0 0 20px #00ff41;
+        }
+        
+        .btn-terminal:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .progress-bar {
+            background: rgba(0, 255, 65, 0.2);
+            border: 1px solid #00ff41;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #00ff41, #00cc33);
+            height: 100%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px #00ff41;
+        }
+        
+        .file-row {
+            border: 1px solid rgba(0, 255, 65, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .file-row:hover {
+            background: rgba(0, 255, 65, 0.1);
+            border-color: #00ff41;
+        }
+        
+        .file-row.selected {
+            background: rgba(0, 255, 65, 0.2);
+            border-color: #00ff41;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .typewriter {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40);
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00ff41;
+            background: transparent;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"]:checked {
+            background: #00ff41;
+            box-shadow: 0 0 10px #00ff41;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .ascii-art {
+            line-height: 1.2;
+            white-space: pre;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="scanline"></div>
+    
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="terminal-box p-6">
+            <div class="ascii-art text-xs md:text-sm terminal-glow">
+██████╗ ██╗███╗   ██╗ █████╗ ██████╗ ██╗   ██╗
+██╔══██╗██║████╗  ██║██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝██║██╔██╗ ██║███████║██████╔╝ ╚████╔╝ 
+██╔══██╗██║██║╚██╗██║██╔══██║██╔══██╗  ╚██╔╝  
+██████╔╝██║██║ ╚████║██║  ██║██║  ██║   ██║   
+╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
+            </div>
+            <div class="text-center mt-4">
+                <span class="terminal-glow">EXTRACTOR & REPACKER v2.0</span>
+                <span class="blink ml-2">█</span>
+            </div>
+            <div class="text-center text-xs mt-2 opacity-70">
+                &gt;&gt; CLOUD-BASED BINARY FILE ANALYSIS SYSTEM &lt;&lt;
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="terminal-box p-4">
+            <div class="flex items-center space-x-2">
+                <span class="text-xs">SYSTEM STATUS:</span>
+                <span id="status" class="text-xs">READY</span>
+                <span class="blink">█</span>
+            </div>
+        </div>
+
+        <!-- File Upload -->
+        <div class="terminal-box p-6">
+            <div class="mb-4 terminal-glow text-sm">&gt; STEP 1: UPLOAD BINARY FILE</div>
+            
+            <input type="file" id="fileInput" accept=".bin,.dat,.raw" />
+            <label for="fileInput" class="block cursor-pointer">
+                <div class="border-2 border-dashed border-green-500 p-8 text-center hover:bg-green-900/20 transition-all">
+                    <div class="text-4xl mb-2">📁</div>
+                    <div class="text-sm">CLICK TO SELECT .BIN FILE</div>
+                    <div class="text-xs opacity-70 mt-2">OR DROP FILE HERE</div>
+                </div>
+            </label>
+            
+            <div id="uploadStatus" class="mt-4 text-xs"></div>
+        </div>
+
+        <!-- File List -->
+        <div id="fileListContainer" class="terminal-box p-6 hidden">
+            <div class="mb-4 terminal-glow text-sm">&gt; STEP 2: SELECT FILES TO EXTRACT</div>
+            
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-xs">
+                    <span id="fileCount">0</span> FILES DETECTED
+                </div>
+                <div class="space-x-2">
+                    <button onclick="selectAll()" class="btn-terminal px-3 py-1 text-xs">SELECT ALL</button>
+                    <button onclick="selectNone()" class="btn-terminal px-3 py-1 text-xs">CLEAR</button>
+                </div>
+            </div>
+            
+            <div id="fileList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            
+            <div class="mt-6">
+                <button id="createZipBtn" onclick="createZip()" class="btn-terminal px-6 py-3 w-full text-sm" disabled>
+                    &gt;&gt; CREATE ZIP ARCHIVE
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="progressContainer" class="terminal-box p-6 hidden">
+            <div class="mb-4 terminal-glow text-sm">&gt; STEP 3: PROCESSING...</div>
+            
+            <div class="progress-bar h-8 mb-4">
+                <div id="progressBar" class="progress-fill" style="width: 0%"></div>
+            </div>
+            
+            <div id="progressLog" class="text-xs space-y-1 max-h-48 overflow-y-auto"></div>
+        </div>
+
+        <!-- Download -->
+        <div id="downloadContainer" class="terminal-box p-6 hidden">
+            <div class="mb-4 terminal-glow text-sm">&gt; OPERATION COMPLETE</div>
+            
+            <div class="text-center py-8">
+                <div class="text-6xl mb-4">✅</div>
+                <div class="text-sm mb-2">ZIP ARCHIVE CREATED SUCCESSFULLY</div>
+                <div id="zipSize" class="text-xs opacity-70 mb-6"></div>
+                
+                <button id="downloadBtn" class="btn-terminal px-8 py-3 text-sm">
+                    ⬇ DOWNLOAD ZIP FILE
+                </button>
+            </div>
+            
+            <div class="text-center mt-4">
+                <button onclick="reset()" class="btn-terminal px-4 py-2 text-xs">
+                    &gt;&gt; PROCESS ANOTHER FILE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UPDATE THIS WITH YOUR MODAL API URL
+        const API_BASE = 'https://YOUR-USERNAME--bin-extractor-upload-bin.modal.run';
+        
+        let currentFileId = null;
+        let extractedFiles = [];
+        let selectedFiles = new Set();
+
+        // File input handling
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        const dropZone = document.querySelector('label[for="fileInput"]');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('bg-green-900/30');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('bg-green-900/30');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('bg-green-900/30');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        async function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            updateStatus('UPLOADING...');
+            uploadStatus.innerHTML = `<span class="terminal-glow">&gt;&gt; Analyzing: ${file.name} (${formatBytes(file.size)})</span>`;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE}/upload-bin`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.file_id) {
+                    currentFileId = data.file_id;
+                    extractedFiles = data.metadata.files;
+                    displayFiles(extractedFiles);
+                    updateStatus('ANALYSIS COMPLETE');
+                    uploadStatus.innerHTML += '<br><span class="text-green-400">&gt;&gt; EXTRACTION COMPLETE</span>';
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (error) {
+                updateStatus('ERROR');
+                uploadStatus.innerHTML = `<span class="text-red-500">&gt;&gt; ERROR: ${error.message}</span>`;
+            }
+        }
+
+        function displayFiles(files) {
+            const container = document.getElementById('fileListContainer');
+            const fileList = document.getElementById('fileList');
+            const fileCount = document.getElementById('fileCount');
+            
+            container.classList.remove('hidden');
+            fileCount.textContent = files.length;
+            
+            fileList.innerHTML = files.map((file, idx) => `
+                <div class="file-row p-3 flex items-center justify-between cursor-pointer" data-idx="${idx}" onclick="toggleFile(${idx})">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <input type="checkbox" id="file-${idx}" onchange="toggleFile(${idx})">
+                        <label for="file-${idx}" class="cursor-pointer flex-1">
+                            <div class="text-sm">${file.name}</div>
+                            <div class="text-xs opacity-70">
+                                Type: ${file.type.toUpperCase()} | 
+                                Size: ${formatBytes(file.size)} | 
+                                Offset: 0x${file.offset.toString(16).toUpperCase()}
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Select all by default
+            selectAll();
+        }
+
+        function toggleFile(idx) {
+            const checkbox = document.getElementById(`file-${idx}`);
+            const row = document.querySelector(`[data-idx="${idx}"]`);
+            
+            if (selectedFiles.has(idx)) {
+                selectedFiles.delete(idx);
+                checkbox.checked = false;
+                row.classList.remove('selected');
+            } else {
+                selectedFiles.add(idx);
+                checkbox.checked = true;
+                row.classList.add('selected');
+            }
+            
+            updateCreateButton();
+        }
+
+        function selectAll() {
+            extractedFiles.forEach((_, idx) => {
+                selectedFiles.add(idx);
+                const checkbox = document.getElementById(`file-${idx}`);
+                const row = document.querySelector(`[data-idx="${idx}"]`);
+                if (checkbox) checkbox.checked = true;
+                if (row) row.classList.add('selected');
+            });
+            updateCreateButton();
+        }
+
+        function selectNone() {
+            selectedFiles.clear();
+            extractedFiles.forEach((_, idx) => {
+                const checkbox = document.getElementById(`file-${idx}`);
+                const row = document.querySelector(`[data-idx="${idx}"]`);
+                if (checkbox) checkbox.checked = false;
+                if (row) row.classList.remove('selected');
+            });
+            updateCreateButton();
+        }
+
+        function updateCreateButton() {
+            const btn = document.getElementById('createZipBtn');
+            btn.disabled = selectedFiles.size === 0;
+            btn.textContent = `>> CREATE ZIP ARCHIVE (${selectedFiles.size} FILES)`;
+        }
+
+        async function createZip() {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressLog = document.getElementById('progressLog');
+            
+            progressContainer.classList.remove('hidden');
+            progressLog.innerHTML = '';
+            progressBar.style.width = '0%';
+            
+            updateStatus('CREATING ZIP...');
+
+            try {
+                const response = await fetch(`${API_BASE}/create-zip`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: currentFileId,
+                        selected_files: Array.from(selectedFiles)
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            handleProgressUpdate(data);
+                        }
+                    }
+                }
+            } catch (error) {
+                updateStatus('ERROR');
+                logProgress(`ERROR: ${error.message}`, 'text-red-500');
+            }
+        }
+
+        function handleProgressUpdate(data) {
+            const progressBar = document.getElementById('progressBar');
+            
+            switch (data.type) {
+                case 'info':
+                    logProgress(`&gt;&gt; ${data.message}`, 'text-yellow-400');
+                    break;
+                case 'progress':
+                    progressBar.style.width = `${data.value}%`;
+                    logProgress(`&gt;&gt; ${data.message} [${data.value}%]`, 'text-green-400');
+                    break;
+                case 'complete':
+                    progressBar.style.width = '100%';
+                    logProgress(`&gt;&gt; OPERATION COMPLETE`, 'text-green-400 terminal-glow');
+                    showDownload(data.size);
+                    break;
+                case 'error':
+                    logProgress(`&gt;&gt; ERROR: ${data.message}`, 'text-red-500');
+                    updateStatus('ERROR');
+                    break;
+            }
+        }
+
+        function logProgress(message, className = '') {
+            const progressLog = document.getElementById('progressLog');
+            const entry = document.createElement('div');
+            entry.className = className;
+            entry.innerHTML = message;
+            progressLog.appendChild(entry);
+            progressLog.scrollTop = progressLog.scrollHeight;
+        }
+
+        function showDownload(size) {
+            const downloadContainer = document.getElementById('downloadContainer');
+            const zipSize = document.getElementById('zipSize');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            downloadContainer.classList.remove('hidden');
+            zipSize.textContent = `FILE SIZE: ${formatBytes(size)}`;
+            
+            downloadBtn.onclick = () => {
+                window.location.href = `${API_BASE}/download-zip?file_id=${currentFileId}`;
+            };
+            
+            updateStatus('READY FOR DOWNLOAD');
+        }
+
+        function reset() {
+            location.reload();
+        }
+
+        function updateStatus(status) {
+            document.getElementById('status').textContent = status;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
