@@ -148,9 +148,9 @@
         <!-- Header -->
         <div class="terminal-box p-6">
             <div class="ascii-art text-xs md:text-sm terminal-glow">
-██████╗ ██╗███╗   ██╗ █████╗ ██████╗ ██╗   ██╗
+█████╗ ██╗███╗   ██╗ █████╗ ██████╗ ██╗   ██╗
 ██╔══██╗██║████╗  ██║██╔══██╗██╔══██╗╚██╗ ██╔╝
-██████╔╝██║██╔██╗ ██║███████║██████╔╝ ╚████╔╝ 
+███████║██║██╔██╗ ██║███████║██████╔╝ ╚████╔╝ 
 ██╔══██╗██║██║╚██╗██║██╔══██║██╔══██╗  ╚██╔╝  
 ██████╔╝██║██║ ╚████║██║  ██║██║  ██║   ██║   
 ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
@@ -246,8 +246,13 @@
     </div>
 
     <script>
-        // UPDATE THIS WITH YOUR MODAL API URL
-        const API_BASE = 'https://YOUR-USERNAME--bin-extractor-upload-bin.modal.run';
+        // Modal API endpoints
+        const API_ENDPOINTS = {
+            uploadBin: 'https://myschoolstory--bin-extractor-upload-bin.modal.run',
+            createZip: 'https://myschoolstory--bin-extractor-create-zip.modal.run',
+            downloadZip: 'https://myschoolstory--bin-extractor-download-zip.modal.run',
+            health: 'https://myschoolstory--bin-extractor-health.modal.run'
+        };
         
         let currentFileId = null;
         let extractedFiles = [];
@@ -292,7 +297,7 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch(`${API_BASE}/upload-bin`, {
+                const response = await fetch(API_ENDPOINTS.uploadBin, {
                     method: 'POST',
                     body: formData
                 });
@@ -399,7 +404,7 @@
             updateStatus('CREATING ZIP...');
 
             try {
-                const response = await fetch(`${API_BASE}/create-zip`, {
+                const response = await fetch(API_ENDPOINTS.createZip, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -472,7 +477,7 @@
             zipSize.textContent = `FILE SIZE: ${formatBytes(size)}`;
             
             downloadBtn.onclick = () => {
-                window.location.href = `${API_BASE}/download-zip?file_id=${currentFileId}`;
+                window.location.href = `${API_ENDPOINTS.downloadZip}?file_id=${currentFileId}`;
             };
             
             updateStatus('READY FOR DOWNLOAD');
